@@ -1,0 +1,15 @@
+#File: add_temperature -- Adds a temperature
+#Parameter: id_Temperature -- id of temperature -- String
+#Parameter: value -- value of temperature -- float
+
+PREFIX wo: <https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#>
+PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:<http://www.w3.org/2001/XMLSchema#>
+
+
+INSERT {
+  wo:%%id_Temperature%% rdf:type wo:Temperature.
+  wo:%%id_Temperature%% wo:hasValue '%%value%%'^^xsd:float.
+}
+WHERE {
+}
