@@ -1,4 +1,7 @@
 @prefix wo: <https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#>.
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
-
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@include <RDFS>.
+@include <OWL>. 
+[rule1: (?a rdf:type wo:Wind) (?a wo:hasSpeed ?b) lessThan(?b, 24.4)  greaterThan(?b, 10.7)->(?a rdf:type wo:StrongWind)]
 

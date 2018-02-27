@@ -67,7 +67,7 @@ public class WeatherKnowledgeBase {
 		//Manipulate data in TDB dataset:
 		Model resource = null;
 		weatherKnowledgeBaseTDBTest.createInferenceInLocalModel();
-		weatherKnowledgeBaseTDBTest.addInfResultToTDB(weatherKnowledgeBaseTDBTest.getInfModel(),"deductionData");
+		//weatherKnowledgeBaseTDBTest.addInfResultToTDB(weatherKnowledgeBaseTDBTest.getInfModel(),"deductionData");
 		try { // chose the data in the Abox 
 			System.out.println("here??????????");
 			int option = readAboxOption();
@@ -89,7 +89,7 @@ public class WeatherKnowledgeBase {
 		//familyTDBTest.listFamilyMembers(resource); 
 		//familyTDBTest.findChild("John", resource);
 		//familyTDBTest.findHusband("Lisa",resource);
-		weatherKnowledgeBaseTDBTest.usingSPARQLFromTDBbyModel("",resource);
+		weatherKnowledgeBaseTDBTest.usingSPARQLFromTDBbyModel("",weatherKnowledgeBaseTDBTest.getInfModel());
 		//weatherKnowledgeBaseTDBTest.listAllData(resource);
 }
 	public WeatherKnowledgeBase(String datasetName) {
@@ -113,7 +113,7 @@ public class WeatherKnowledgeBase {
 	public void usingSPARQLFromTDBbyModel(String s, Model resource) {
 		String queryString = s;
 		if(queryString.equals("")) {
-			queryString = "SELECT ?x ?y ?z WHERE {?x  ?y ?z}";
+			queryString = "SELECT ?y ?z WHERE {<https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#Wind02-27-2018>   ?y ?z}";
 		}
 		System.out.println("SPARQL query is: " + queryString);
 		
@@ -132,6 +132,8 @@ public class WeatherKnowledgeBase {
 			
 			//print result 
 			ResultSetFormatter.out(results);
+			//System.out.println(ResultSetFormatter.toList(results));
+			
 			qexec.close();
 			System.out.print(">>>>>>>>>>>>>>>>>>>>>>>>>>>query ended<<<<<<<<<<<<<<<<<<<<<");
 		}catch (Exception e) {
@@ -156,21 +158,28 @@ public class WeatherKnowledgeBase {
 	
 	public void addRulesReasoner() {	
 		//create a reasoner by rules and add the reasoner into infmodel
+		//this.infmodel.getDeductionsModel().write(System.out,"RDF/XML");
 		System.out.println(rules);
-		rulesReasoner = new GenericRuleReasoner(rules);
-		this.infmodel = ModelFactory.createInfModel(rulesReasoner, this.infmodel); //create new inference by adding new rules
+		
+		GenericRuleReasoner rulesReasoner = new GenericRuleReasoner(rules);
+		System.out.print(rulesReasoner.toString());
+		rulesReasoner.setOWLTranslation(true);
+		rulesReasoner.setTransitiveClosureCaching(true);
+		rulesReasoner.bindSchema(model);
+		
+		this.infmodel = ModelFactory.createInfModel(rulesReasoner, this.data); //create new inference by adding new rules
+		this.infmodel.getDeductionsModel().write(System.out,"RDF/XML");
 	}
 	
 	public void createInferenceInLocalModel() {
 		//create inference model by adding OWL reasoner and rules reasoner
-		Reasoner reasoner = ReasonerRegistry.getRDFSReasoner(); //using OWL Reasoner
+		Reasoner reasoner = ReasonerRegistry.getOWLReasoner(); //using OWL Reasoner
 		dataset.begin(ReadWrite.READ);
 		data = dataset.getNamedModel("data");
-		try {
-			//FileOutputStream out= new FileOutputStream("test2.owl");
+		try { 
 			long startTime = System.currentTimeMillis();
-			boundReasoner = reasoner.bindSchema(model);
-			this.infmodel = ModelFactory.createInfModel(boundReasoner,data);
+			//boundReasoner = reasoner.bindSchema(model);
+			//this.infmodel = ModelFactory.createInfModel(boundReasoner,data);
 			addRulesReasoner(); // add rules reasoner
 			long endTime = System.currentTimeMillis();
 			System.out.println("time of creating infmodel is : " + (endTime-startTime) +"ms");
