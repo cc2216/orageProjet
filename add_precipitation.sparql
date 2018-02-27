@@ -9,8 +9,8 @@ PREFIX xsd:<http://www.w3.org/2001/XMLSchema#>
 
 
 INSERT {
-  wo:%%id_Wind%% rdf:type wo:Precipitation.
-  wo:%%id_Wind%% wo:hasIntensity '%%intensity%%'^^xsd:float.
+  wo:%%id_Precipitation%% rdf:type wo:Precipitation.
+  wo:%%id_Precipitation%% wo:hasIntensity '%%intensity%%'^^xsd:float.
 }
 WHERE {
 }

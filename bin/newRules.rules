@@ -4,4 +4,8 @@
 @include <RDFS>.
 @include <OWL>. 
 [rule1: (?a rdf:type wo:Wind) (?a wo:hasSpeed ?b) lessThan(?b, 24.4)  greaterThan(?b, 10.7)->(?a rdf:type wo:StrongWind)]
-
+[rule2: (?a rdf:type wo:Wind) (?a wo:hasSpeed ?b) greaterThan(?b, 24.4)->(?a rdf:type wo:Storm)]
+[rule3: (?a rdf:type wo:Wind) (?a wo:hasSpeed ?b) lessThan(?b, 10.7)->(?a rdf:type wo:LightWind)]
+[rule4: (?a rdf:type wo:Precipitation) (?a wo:hasIntensity ?b)  greaterThan(?b, 4.0)->(?a rdf:type wo:HeavyPrecipitation)]
+[rule5: (?a rdf:type wo:Temperature) (?a wo:hasValue ?b)  greaterThan(?b, 0)->(?a rdf:type wo:AboveZeroTemperature )]
+[rule6: (?a rdf:type wo:WeatherState) (?a wo:hasWeatherPhenomenon ?b) (?b rdf:type wo:HeavyPrecipitation) (?a wo:hasWeatherPhenomenon ?c) (?c rdf:type wo:AboveZeroTemperature)  (?a wo:hasWeatherPhenomenon ?d) (?d rdf:type wo:StrongWind)->(?a rdf:type wo:Thunderstorm)]

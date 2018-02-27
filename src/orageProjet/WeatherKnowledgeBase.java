@@ -62,13 +62,17 @@ public class WeatherKnowledgeBase {
 		// Using DateFormat format method we can create a string 
 		// representation of a date with the defined format.
 		String reportDate = df.format(today);
-		weatherKnowledgeBaseTDBTest.addTemperature("Temperature"+reportDate, "20");
-		weatherKnowledgeBaseTDBTest.addWind("Wind"+reportDate, "20", "339.5");
-		weatherKnowledgeBaseTDBTest.addPrecipitation("Precipitation"+reportDate, "0.8");
+		String id_Temperature = "Temperature"+reportDate;
+		String id_Wind = "Wind"+reportDate;
+		String id_Precipitation = "Precipitation"+reportDate;
+		weatherKnowledgeBaseTDBTest.addTemperature(id_Temperature, "20");
+		weatherKnowledgeBaseTDBTest.addWind(id_Wind, "20", "339.5");
+		weatherKnowledgeBaseTDBTest.addPrecipitation(id_Precipitation, "5.0");
+		weatherKnowledgeBaseTDBTest.addWeatherstate("Weatherstate"+reportDate, id_Temperature, id_Wind, id_Precipitation);
 		//Manipulate data in TDB dataset:
 		Model resource = null;
 		weatherKnowledgeBaseTDBTest.createInferenceInLocalModel();
-		try { // chose the data in the Abox 
+		/*try { // chose the data in the Abox 
 			int option = readAboxOption();
 			if (option == 1) {
 				resource = weatherKnowledgeBaseTDBTest.getOriginalData();
@@ -84,12 +88,9 @@ public class WeatherKnowledgeBase {
 			
 		} catch (IOException e){
 			e.printStackTrace();
-		}
-		//familyTDBTest.listFamilyMembers(resource); 
-		//familyTDBTest.findChild("John", resource);
-		//familyTDBTest.findHusband("Lisa",resource);
-		weatherKnowledgeBaseTDBTest.usingSPARQLFromTDBbyModel("",resource);
-		//weatherKnowledgeBaseTDBTest.listAllData(resource);
+		}*/
+	
+		System.out.println(weatherKnowledgeBaseTDBTest.searchThunderStrom(weatherKnowledgeBaseTDBTest.getAllData()));
 }
 	public WeatherKnowledgeBase(String datasetName) {
 		this.directory = datasetName;
@@ -113,8 +114,8 @@ public class WeatherKnowledgeBase {
 	public void usingSPARQLFromTDBbyModel(String s, Model resource) {
 		String queryString = s;
 		if(queryString.equals("")) {
-			//queryString = "SELECT ?y ?z WHERE {<https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#Wind02-27-2018>   ?y ?z}";
-			queryString = "SELECT ?y ?z WHERE {<https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#Wind02-27-2018>  ?y ?z}";
+			//queryString = "SELECT ?x WHERE {?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#Thunderstorm>}";
+			queryString = "SELECT ?x ?y ?z WHERE {?x ?y ?z}";
 		}
 		System.out.println("SPARQL query is: " + queryString);
 		
@@ -146,10 +147,46 @@ public class WeatherKnowledgeBase {
 		
 	}
 	
+	public Boolean searchThunderStrom(Model resource) {
+		Boolean isThunderStorm = false;
+		String queryString = "SELECT ?x WHERE {?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#Thunderstorm>}";
+
+		System.out.println("SPARQL query is: " + queryString);
+		
+		Query query = QueryFactory.create(queryString);
+		//dataset.begin(ReadWrite.READ);
+		try (QueryExecution qexec = QueryExecutionFactory.create(query, resource)) {
+			long startTime = System.currentTimeMillis();
+			ResultSet results = qexec.execSelect();
+			long endTime = System.currentTimeMillis();
+			System.out.println("time of excuting query is : " + (endTime-startTime) + "ms");
+			System.out.println("After Quering by SPARQL, result is: ");
+			
+			//write result into a file
+			//FileOutputStream outResult = new FileOutputStream("result/testQueryResultOfTDBWithInfModelDataset.owl");
+			//ResultSetFormatter.out(outResult, results, query);
+			
+			//print result
+			if(results.hasNext()) {
+				ResultSetFormatter.out(results);
+				isThunderStorm = true;
+			}
+			//System.out.println(ResultSetFormatter.toList(results));
+			
+			qexec.close();
+			System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>query ended<<<<<<<<<<<<<<<<<<<<<");
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+			return isThunderStorm;
+		
+	}
+	
 	public void addRulesFile(String rulesFile) {
 		//Add new rules from file		
-		String newFamilyRules = WeatherKnowledgeBase.class.getClassLoader().getResource(rulesFile).getPath();//path of family rules
-		List<Rule> newRules = Rule.rulesFromURL(newFamilyRules);
+		String newWeatherRules = WeatherKnowledgeBase.class.getClassLoader().getResource(rulesFile).getPath();//path of Weather Rules
+		List<Rule> newRules = Rule.rulesFromURL(newWeatherRules);
 		if (rules == null) {
 			rules = newRules;
 		} else {
@@ -173,13 +210,8 @@ public class WeatherKnowledgeBase {
 	}
 	
 	public void createInferenceInLocalModel() {
-		//create inference model by adding OWL reasoner and rules reasoner
-		//dataset.begin(ReadWrite.READ);
-		//data = dataset.getNamedModel("data");
 		try { 
 			long startTime = System.currentTimeMillis();
-			//boundReasoner = reasoner.bindSchema(model);
-			//this.infmodel = ModelFactory.createInfModel(boundReasoner,data);
 			addRulesReasoner(); // add rules reasoner
 			deductionData = this.infmodel.getDeductionsModel();
 			long endTime = System.currentTimeMillis();
@@ -215,12 +247,8 @@ public class WeatherKnowledgeBase {
 /*
  * functions for oprating the dataset by SPARQL
  * */
-	public void insertData(String insertString) { // operation for inserting data into model of TDB dataset
-		//dataset.begin(ReadWrite.WRITE) ;
-		//data = dataset.getNamedModel("data");
-		
+	public void insertData(String insertString) { // operation for inserting data into model 
 		try {
-			//GraphStore graphStore = GraphStoreFactory.create(data);
 			UpdateRequest request = UpdateFactory.create(insertString) ;
 		    UpdateProcessor proc = UpdateExecutionFactory.create(request, GraphStoreFactory.create(this.data));
 		    proc.execute();
@@ -270,11 +298,28 @@ public class WeatherKnowledgeBase {
 		String insertString = "";
 		try {
 			insertString = FileUtil.readFile("add_precipitation.sparql");
-			insertString = insertString.replaceAll("%%id_Wind%%", name);
+			insertString = insertString.replaceAll("%%id_Precipitation%%", name);
 			insertString = insertString.replaceAll("%%intensity%%", intensity);
 			insertData(insertString);
 			System.out.println("added Precipitation " + name + " speed : " + intensity );
 		    
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void addWeatherstate(String name, String idTemperature, String idWind, String idPrecipitation) { //added weatherstate
+		String insertString = "";
+		try {
+			insertString = FileUtil.readFile("add_weatherstate.sparql");
+			insertString = insertString.replaceAll("%%id_weatherstate%%", name);
+			insertString = insertString.replaceAll("%%id_Precipitation%%", idPrecipitation);
+			insertString = insertString.replaceAll("%%id_Temperature%%", idTemperature);
+			insertString = insertString.replaceAll("%%id_Wind%%", idWind);
+			System.out.println(insertString);
+			insertData(insertString);
+		
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

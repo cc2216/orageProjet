@@ -1,0 +1,19 @@
+#File: add_temperature -- Adds a temperature
+#Parameter: id_weatherstate -- id of weatherstate -- String
+#Parameter: id_Temperature -- id of Temperature -- String
+#Parameter: id_Wind -- id of Wind -- String
+#Parameter: id_Precipitation -- id of Precipitation -- String
+
+PREFIX wo: <https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#>
+PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:<http://www.w3.org/2001/XMLSchema#>
+
+
+INSERT {
+  wo:%%id_weatherstate%% rdf:type wo:WeatherState.
+  wo:%%id_weatherstate%% wo:hasWeatherPhenomenon wo:%%id_Temperature%%.
+  wo:%%id_weatherstate%% wo:hasWeatherPhenomenon wo:%%id_Wind%%.
+  wo:%%id_weatherstate%% wo:hasWeatherPhenomenon wo:%%id_Precipitation%%.
+}
+WHERE {
+}
