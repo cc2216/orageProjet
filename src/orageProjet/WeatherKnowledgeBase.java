@@ -64,12 +64,11 @@ public class WeatherKnowledgeBase {
 		String reportDate = df.format(today);
 		weatherKnowledgeBaseTDBTest.addTemperature("Temperature"+reportDate, "20");
 		weatherKnowledgeBaseTDBTest.addWind("Wind"+reportDate, "20", "339.5");
+		weatherKnowledgeBaseTDBTest.addPrecipitation("Precipitation"+reportDate, "0.8");
 		//Manipulate data in TDB dataset:
 		Model resource = null;
 		weatherKnowledgeBaseTDBTest.createInferenceInLocalModel();
-		//weatherKnowledgeBaseTDBTest.addInfResultToTDB(weatherKnowledgeBaseTDBTest.getInfModel(),"deductionData");
 		try { // chose the data in the Abox 
-			System.out.println("here??????????");
 			int option = readAboxOption();
 			if (option == 1) {
 				resource = weatherKnowledgeBaseTDBTest.getOriginalData();
@@ -89,12 +88,13 @@ public class WeatherKnowledgeBase {
 		//familyTDBTest.listFamilyMembers(resource); 
 		//familyTDBTest.findChild("John", resource);
 		//familyTDBTest.findHusband("Lisa",resource);
-		weatherKnowledgeBaseTDBTest.usingSPARQLFromTDBbyModel("",weatherKnowledgeBaseTDBTest.getInfModel());
+		weatherKnowledgeBaseTDBTest.usingSPARQLFromTDBbyModel("",resource);
 		//weatherKnowledgeBaseTDBTest.listAllData(resource);
 }
 	public WeatherKnowledgeBase(String datasetName) {
 		this.directory = datasetName;
-		dataset = TDBFactory.createDataset(directory);
+		//dataset = TDBFactory.createDataset(directory);
+		data = ModelFactory.createDefaultModel();
 		this.model = ModelFactory.createDefaultModel();
 		this.model.read("https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl");
 		addRulesFile("newRules.rules");
@@ -113,12 +113,13 @@ public class WeatherKnowledgeBase {
 	public void usingSPARQLFromTDBbyModel(String s, Model resource) {
 		String queryString = s;
 		if(queryString.equals("")) {
-			queryString = "SELECT ?y ?z WHERE {<https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#Wind02-27-2018>   ?y ?z}";
+			//queryString = "SELECT ?y ?z WHERE {<https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#Wind02-27-2018>   ?y ?z}";
+			queryString = "SELECT ?y ?z WHERE {<https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#Wind02-27-2018>  ?y ?z}";
 		}
 		System.out.println("SPARQL query is: " + queryString);
 		
 		Query query = QueryFactory.create(queryString);
-		dataset.begin(ReadWrite.READ);
+		//dataset.begin(ReadWrite.READ);
 		try (QueryExecution qexec = QueryExecutionFactory.create(query, resource)) {
 			long startTime = System.currentTimeMillis();
 			ResultSet results = qexec.execSelect();
@@ -140,7 +141,7 @@ public class WeatherKnowledgeBase {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			dataset.end();
+			//dataset.end();
 		}
 		
 	}
@@ -162,54 +163,35 @@ public class WeatherKnowledgeBase {
 		System.out.println(rules);
 		
 		GenericRuleReasoner rulesReasoner = new GenericRuleReasoner(rules);
-		System.out.print(rulesReasoner.toString());
+		//System.out.print(rulesReasoner.toString());
 		rulesReasoner.setOWLTranslation(true);
 		rulesReasoner.setTransitiveClosureCaching(true);
 		rulesReasoner.bindSchema(model);
 		
 		this.infmodel = ModelFactory.createInfModel(rulesReasoner, this.data); //create new inference by adding new rules
-		this.infmodel.getDeductionsModel().write(System.out,"RDF/XML");
+		//this.infmodel.getDeductionsModel().write(System.out,"RDF/XML");
 	}
 	
 	public void createInferenceInLocalModel() {
 		//create inference model by adding OWL reasoner and rules reasoner
-		Reasoner reasoner = ReasonerRegistry.getOWLReasoner(); //using OWL Reasoner
-		dataset.begin(ReadWrite.READ);
-		data = dataset.getNamedModel("data");
+		//dataset.begin(ReadWrite.READ);
+		//data = dataset.getNamedModel("data");
 		try { 
 			long startTime = System.currentTimeMillis();
 			//boundReasoner = reasoner.bindSchema(model);
 			//this.infmodel = ModelFactory.createInfModel(boundReasoner,data);
 			addRulesReasoner(); // add rules reasoner
+			deductionData = this.infmodel.getDeductionsModel();
 			long endTime = System.currentTimeMillis();
 			System.out.println("time of creating infmodel is : " + (endTime-startTime) +"ms");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			dataset.end();
+			//dataset.end();
 		}
 	}
-	
-	
-	
-	public void addInfResultToTDB(InfModel inf, String dataName) {
-		//add deduction result to a model of TDB dataset 
-		dataset.begin(ReadWrite.WRITE) ;
-		deductionData = dataset.getNamedModel(dataName);
-		if(!deductionData.isEmpty()) { // if the model is not empty, clean it up
-			deductionData.removeAll();
-		}
-		try {
-			deductionData.add(inf.getDeductionsModel());		
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}finally {
-			dataset.commit();
-			dataset.end(); 
-		}
-	}
+
 	
 	public InfModel getInfModel() {
 		return this.infmodel;
@@ -220,13 +202,13 @@ public class WeatherKnowledgeBase {
 	}
 	
 	public Model getDeductionData() { //get data created by inference
-		return this.deductionData;
+		return deductionData;
 	}
 	
 	public Model getAllData() { // get all data in the TDB dataset
-		dataset.begin(ReadWrite.READ);
-		Model allData = dataset.getUnionModel();
-		dataset.end();
+		Model allData = ModelFactory.createDefaultModel();
+		allData.add(data);
+		allData.add(deductionData);
 		return allData;
 	}
 	
@@ -234,21 +216,21 @@ public class WeatherKnowledgeBase {
  * functions for oprating the dataset by SPARQL
  * */
 	public void insertData(String insertString) { // operation for inserting data into model of TDB dataset
-		dataset.begin(ReadWrite.WRITE) ;
-		data = dataset.getNamedModel("data");
+		//dataset.begin(ReadWrite.WRITE) ;
+		//data = dataset.getNamedModel("data");
 		
 		try {
-			GraphStore graphStore = GraphStoreFactory.create(data);
+			//GraphStore graphStore = GraphStoreFactory.create(data);
 			UpdateRequest request = UpdateFactory.create(insertString) ;
-		    UpdateProcessor proc = UpdateExecutionFactory.create(request, graphStore);
+		    UpdateProcessor proc = UpdateExecutionFactory.create(request, GraphStoreFactory.create(this.data));
 		    proc.execute();
 		    
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}finally {
-			dataset.commit();
-			dataset.end(); 
+			//dataset.commit();
+			//dataset.end(); 
 		}
 	}
 	
@@ -284,6 +266,20 @@ public class WeatherKnowledgeBase {
 		}
 	}
 	
+	public void addPrecipitation(String name, String intensity) { //added precipitation
+		String insertString = "";
+		try {
+			insertString = FileUtil.readFile("add_precipitation.sparql");
+			insertString = insertString.replaceAll("%%id_Wind%%", name);
+			insertString = insertString.replaceAll("%%intensity%%", intensity);
+			insertData(insertString);
+			System.out.println("added Precipitation " + name + " speed : " + intensity );
+		    
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	
 	
 	

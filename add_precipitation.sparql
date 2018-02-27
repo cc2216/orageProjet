@@ -1,0 +1,16 @@
+#File: add_precipitation -- Adds a precipitation
+#Parameter: id_Wind -- id of temperature -- String
+#Parameter: speed -- value of wind speed -- float
+#Parameter: direction -- value of wind direction -- float
+
+PREFIX wo: <https://www.auto.tuwien.ac.at/downloads/thinkhome/ontology/WeatherOntology.owl#>
+PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:<http://www.w3.org/2001/XMLSchema#>
+
+
+INSERT {
+  wo:%%id_Wind%% rdf:type wo:Precipitation.
+  wo:%%id_Wind%% wo:hasIntensity '%%intensity%%'^^xsd:float.
+}
+WHERE {
+}
